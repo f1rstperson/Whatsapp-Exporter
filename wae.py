@@ -1,5 +1,7 @@
 import sqlite3
 import sys
+import os
+from pathlib import Path
 
 from WAChat import WAChat
 from WAMessage import WAMessage
@@ -39,7 +41,7 @@ class WAExporter:
 
     def getChatMessages(self, chat_id):
         """
-        Returns all WAMessage's from the database for key_remote_jid. Resolves 
+        Returns all WAMessage's from the database for key_remote_jid. Resolves
         quoted messages one layer deep (as WA itself does).
         """
         c = self.conn.cursor();
@@ -69,7 +71,7 @@ class WAExporter:
         for i in range(0, len(response)):
             quoted_message = self.getMessageById(response[i][10]) \
                 if response[i][10] != None else None
-            
+
             typed.append(WAMessage(
                 response[i][0], response[i][1], response[i][2], response[i][3], response[i][4],
                 response[i][5], response[i][6], response[i][7], "", response[i][8], response[i][9],
@@ -80,7 +82,7 @@ class WAExporter:
     def getMessageById(self, id):
         """
         Returns a single WAMessage from the DB by its key_id. Does not retrive any
-        quoted messages or links, as this is intended to be used to retrieve 
+        quoted messages or links, as this is intended to be used to retrieve
         quoted_messages from `self.getChatMessages()`
         """
         c = self.conn.cursor();
@@ -99,12 +101,15 @@ class WAExporter:
          WHERE messages.key_id = ?
         """, (id, ))
         response = c.fetchone()
-        typed = WAMessage(
-            response[0], response[1], response[2], response[3], response[4],
-            response[5], response[6], response[7], "", response[8], response[9],
-            None, False
-        ) # TODO filename
-        return typed
+        if response != None:
+            typed = WAMessage(
+                response[0], response[1], response[2], response[3], response[4],
+                response[5], response[6], response[7], "", response[8], response[9],
+                None, False
+            ) # TODO filename
+            return typed
+        else:
+            return None
 
 
     def checkArgv(self):
@@ -113,8 +118,7 @@ class WAExporter:
             exit(1)
 
 
-
-def main():
+def test():
     # checkArgv()
     wae = WAExporter('..\\messages.decrypted.db')
     # print(list(map(lambda c: c.creation, wae.getChats())))
@@ -123,10 +127,21 @@ def main():
 
     for m in wae.getChatMessages('4915751163903@s.whatsapp.net'):
         # if m.data != None: print(m.data.encode('ascii', 'ignore'))
-        print(m.toString().encode('ascii', 'ignore'))
+        print(m.toString())
         # if m.quoted_message != None: print(m.quoted_message.data.encode('ascii', 'ignore'))
         pass
 
 
+def main():
+    # checkArgv()
+    wae = WAExporter('..\\messages.decrypted.db')
+    basedir = Path("out")
+    if not os.path.exists(basedir): os.mkdir(basedir);
+
+    for chat in wae.getChats():
+        f = open(basedir / (chat.key_remote_jid + ".txt"), "w", encoding="utf8")
+        for m in wae.getChatMessages(chat.key_remote_jid):
+            f.write(m.toString() + "\n")
+        f.close()
 
 main()

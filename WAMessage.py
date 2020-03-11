@@ -11,7 +11,10 @@ class WAMessage:
         self.from_me = from_me
         self.data = data if data != None else ""
         self.timestamp = timestamp
-        self.media_type = WAMediaType(int(media_type))
+        try:
+            self.media_type = WAMediaType(int(media_type))
+        except ValueError:
+            self.media_type = WAMediaType.UNKNOWN
         self.media_caption = media_caption if media_caption != None else ""
         self.media_duration = media_duration
         self.file_name = file_name
@@ -27,7 +30,7 @@ class WAMessage:
     def toString(self):
         r = self.id + " " + self.posix_to_human(self.timestamp / 1000) + "; "
 
-        r = r + "   ME: " if self.from_me else "OTHER: "
+        r = r + ("   ME: " if self.from_me else "OTHER: ")
         
         if self.quoted_message:
             r = r + "[ Quote from " + \

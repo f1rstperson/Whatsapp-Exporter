@@ -18,3 +18,4 @@ class WAMediaType(Enum):
     UNKNOWN6 = 14
     UNKNOWN7 = 15
     LIVE_LOCATION = 16
+    UNKNOWN = 420
